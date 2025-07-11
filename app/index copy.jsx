@@ -1,7 +1,7 @@
 import MicInterface from '@/components/mic_interface';
 import NotificationMessage from '@/components/notification_message';
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
-import { Entypo, Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -19,6 +19,11 @@ export default function HomeScreen() {
       message: '',
       type: 'success', // or 'error'
     });
+
+    const handleRecordingComplete = (fileUri) => {
+      setNotification({ message: 'Recording saved successfully!', type: 'success' });
+      setTimeout(() => setNotification({ message: '', type: '' }), 3000);
+    };
 
 
     if (!fontsLoaded) {
@@ -47,7 +52,7 @@ export default function HomeScreen() {
 
         <View style={styles.row}>
           <ActionChip icon={<FontAwesome5 name="image" size={16} color="#333" />} label="Create image" />
-          <ActionChip icon={<Entypo name="gift" size={16} color="#333" />} label="Surprise me" />
+          <ActionChip icon={<FontAwesome5 name="image" size={16} color="#333" />} label="Surprise me" />
         </View>
 
         <View style={styles.row}>
@@ -68,46 +73,8 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{/* test notification code */}
-      {/* <TouchableOpacity
-        style={{
-          marginTop: 20,
-          backgroundColor: '#0057ff',
-          paddingVertical: 10,
-          paddingHorizontal: 16,
-          borderRadius: 8,
-          alignSelf: 'center',
-        }}
-        onPress={() => showNotification('This is a test!', 'error')}
-      >
-  <Text style={{ color: 'white', fontWeight: 'bold' }}>Show Notification</Text>
-</TouchableOpacity> */}
-
-
-
-
-
-
-
-
       {/* Mic Interface */}
-      <MicInterface visible={showMicModal} onClose={() => setShowMicModal(false)} />
+      <MicInterface visible={showMicModal} onClose={() => setShowMicModal(false)} onFinish={handleRecordingComplete} />
 
 
       {/* Notification Message */}

@@ -1,19 +1,29 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+import { Audio, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { uploadAudio } from './utility/uploadData_mob_to_pc';
 
 const { height: screenHeight } = Dimensions.get('window');
 
-export default function MicInterface({ visible, onClose }) {
+export default function MicInterface({ visible, onClose, onFinish }) {
   const [recording, setRecording] = useState(null);
+  const videoRef = useRef(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  useEffect(() => {
+    if (visible && videoLoaded) {
+      videoRef.current?.playAsync();
+    } else {
+      videoRef.current?.pauseAsync();
+    }
+  }, [visible, videoLoaded]);
 
   useEffect(() => {
     if (visible) {
       startRecording();
     } else {
-      stopRecording();
+      stopAndDeleteRecording(); // cleanup if closed directly
     }
   }, [visible]);
 
@@ -30,17 +40,42 @@ export default function MicInterface({ visible, onClose }) {
         playsInSilentModeIOS: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      setRecording(recording);
-    } catch (err) {
-      console.error('Failed to start recording', err);
+      const newRecording = new Audio.Recording();
+      await newRecording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+      await newRecording.startAsync();
+      setRecording(newRecording);
+    } catch (error) {
+      console.error('Failed to start recording', error);
     }
   };
 
-  const stopRecording = async () => {
+const stopAndDeleteRecording = async () => {
+  try {
+    if (!recording) return;
+
+    const status = await recording.getStatusAsync();
+
+    if (status.isRecording) {
+      await recording.stopAndUnloadAsync();
+    }
+
+    const uri = recording.getURI();
+
+    // Delete file if it exists
+    if (uri) {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+      console.log('Recording discarded.');
+    }
+
+  } catch (error) {
+    console.error('Failed to discard recording', error);
+  } finally {
+    setRecording(null);
+  }
+};
+
+
+  const handleSubmit = async () => {
     try {
       if (!recording) return;
 
@@ -48,32 +83,54 @@ export default function MicInterface({ visible, onClose }) {
       const uri = recording.getURI();
 
       const destPath = FileSystem.documentDirectory + `recording-${Date.now()}.m4a`;
-      await FileSystem.moveAsync({
-        from: uri,
-        to: destPath,
-      });
+      await FileSystem.moveAsync({ from: uri, to: destPath });
 
-      console.log('Audio saved to:', destPath);
+      await uploadAudio(destPath);
+      console.log('Audio uploaded:', destPath);
+
+      if (onFinish) onFinish(destPath);
       setRecording(null);
-    } catch (err) {
-      console.error('Failed to stop recording', err);
+      onClose(); // close modal
+    } catch (error) {
+      console.error('Failed to stop/upload recording', error);
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.micSheet}>
-          <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
-            <Text style={{ fontSize: 24, color: '#000' }}>×</Text>
-          </TouchableOpacity>
-          <Text style={styles.micTitle}>Listening...</Text>
 
-          <View style={styles.voiceContainer}>
-            <View style={styles.voiceIndicator} />
-            <TouchableOpacity style={styles.sendButton} disabled>
-              <Ionicons name="send" size={26} color="#ccc" />
+          {/* Header Row: Cross - Listening - Submit */}
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+                onPress={async () => {
+                  await stopAndDeleteRecording();
+                  onClose();
+                }}
+              >
+              <Text style={styles.icon}>×</Text>
             </TouchableOpacity>
+
+            <Text style={styles.micTitle}>Listening...</Text>
+
+            <TouchableOpacity onPress={handleSubmit}>
+              <Text style={styles.icon}>→</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Mic animation */}
+          <View style={styles.videoContainer}>
+            <Video
+              ref={videoRef}
+              source={require('../assets/mic_animation.mp4')}
+              style={styles.video}
+              resizeMode="contain"
+              isLooping
+              shouldPlay={visible}
+              useNativeControls={false}
+              onLoad={() => setVideoLoaded(true)}
+            />
           </View>
         </View>
       </View>
@@ -90,7 +147,7 @@ const styles = StyleSheet.create({
   micSheet: {
     backgroundColor: '#fff',
     width: '100%',
-    height: screenHeight * 0.32,
+    height: screenHeight * 0.25,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 24,
@@ -100,30 +157,29 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  icon: {
+    fontSize: 32,
+    color: '#000',
+    paddingHorizontal: 10,
+  },
   micTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
   },
-  closeIcon: {
-    position: 'absolute',
-    top: 18,
-    right: 20,
-    zIndex: 2,
-  },
-  voiceContainer: {
-    flexDirection: 'row',
+  videoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 40,
-  },
-  voiceIndicator: {
-    width: 100,
     height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 100, 150, 0.3)',
   },
-  sendButton: {
-    marginLeft: 30,
+  video: {
+    width: 200,
+    height: 200,
   },
 });

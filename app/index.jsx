@@ -1,7 +1,8 @@
 import MicInterface from '@/components/mic_interface';
 import NotificationMessage from '@/components/notification_message';
+import TextInputModal from '@/components/TextInputModal';
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
-import { Entypo, Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -13,12 +14,18 @@ export default function HomeScreen() {
     });
 
     const [showMicModal, setShowMicModal] = useState(false);
+    const [showTextInputModal, setShowTextInputModal] = useState(false);
 
     const [notification, setNotification] = useState({
       visible: false,
       message: '',
       type: 'success', // or 'error'
     });
+
+    const handleRecordingComplete = (fileUri) => {
+      setNotification({ message: 'Recording saved successfully!', type: 'success' });
+      setTimeout(() => setNotification({ message: '', type: '' }), 3000);
+    };
 
 
     if (!fontsLoaded) {
@@ -29,6 +36,14 @@ export default function HomeScreen() {
     function showNotification(msg, type = 'success') {
       setNotification({ visible: true, message: msg, type });
     }
+
+    const handleTextSubmit = (text) => {
+      console.log('User typed:', text);
+      // TODO: Process or send this text to your backend or assistant logic
+      setNotification({ visible: true, message: 'Text submitted!', type: 'success' });
+      setTimeout(() => setNotification({ visible: false, message: '', type: '' }), 3000);
+    };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -47,7 +62,7 @@ export default function HomeScreen() {
 
         <View style={styles.row}>
           <ActionChip icon={<FontAwesome5 name="image" size={16} color="#333" />} label="Create image" />
-          <ActionChip icon={<Entypo name="gift" size={16} color="#333" />} label="Surprise me" />
+          <ActionChip icon={<FontAwesome5 name="image" size={16} color="#333" />} label="Surprise me" />
         </View>
 
         <View style={styles.row}>
@@ -63,13 +78,24 @@ export default function HomeScreen() {
           <Ionicons name="mic" size={28} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.keyboardIcon}>
-          <MaterialCommunityIcons name="keyboard" size={30} color="#000" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.keyboardIcon}
+            onPress={() => setShowTextInputModal(true)}
+          >
+            <MaterialCommunityIcons name="keyboard" size={30} color="#000" />
+          </TouchableOpacity>
       </View>
 
       {/* Mic Interface */}
-      <MicInterface visible={showMicModal} onClose={() => setShowMicModal(false)} />
+      <MicInterface visible={showMicModal} onClose={() => setShowMicModal(false)} onFinish={handleRecordingComplete} />
+      
+      {/* TextInput Interface */}
+      <TextInputModal
+        visible={showTextInputModal}
+        onClose={() => setShowTextInputModal(false)}
+        onSubmit={handleTextSubmit}
+      />
+
 
 
       {/* Notification Message */}
