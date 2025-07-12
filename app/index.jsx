@@ -1,49 +1,154 @@
+import ChatHistory from '@/components/ChatHistory';
+import EditClearButton from '@/components/EditClearButton';
+import GenerateMessageUI from '@/components/GenerateMessageUI';
+import HomeMiddleSection from '@/components/HomeMiddleSection';
 import MicInterface from '@/components/mic_interface';
-import NotificationMessage from '@/components/notification_message';
 import TextInputModal from '@/components/TextInputModal';
-import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
-import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useState } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import TopLeftToggleIcon from '@/components/TopLeftToggleIcon';
+import { handleUserInput } from '@/components/utility/dataManager';
 
+import NotificationMessage from '@/components/notification_message';
+
+import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRef, useState } from 'react';
+import { Animated, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
-    const [fontsLoaded] = useFonts({
-        Tektur_900Black,
-    });
+  const [fontsLoaded] = useFonts({
+    Tektur_900Black,
+  });
 
-    const [showMicModal, setShowMicModal] = useState(false);
-    const [showTextInputModal, setShowTextInputModal] = useState(false);
+  // Input interfaces
+  const [showMicModal, setShowMicModal] = useState(false);
+  const [showTextInputModal, setShowTextInputModal] = useState(false);
 
-    const [notification, setNotification] = useState({
-      visible: false,
-      message: '',
-      type: 'success', // or 'error'
-    });
+  // Chat history toggle and data
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
 
-    const handleRecordingComplete = (fileUri) => {
-      setNotification({ message: 'Recording saved successfully!', type: 'success' });
-      setTimeout(() => setNotification({ message: '', type: '' }), 3000);
-    };
+  // Animated values
+  const homeOpacity = useRef(new Animated.Value(1)).current;
+  const chatOpacity = useRef(new Animated.Value(0)).current;
 
+  // Backend response state
+  const [GetBackendResponse, setGetBackendResponse] = useState(null);
 
-    if (!fontsLoaded) {
-        return null; // or show a loading spinner
+  // Notification state
+  const [notification, setNotification] = useState({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
+
+  // Animation helpers
+  const showChatView = () => {
+    Animated.parallel([
+      Animated.timing(homeOpacity, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(chatOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowChatHistory(true));
+  };
+
+  const hideChatView = () => {
+    Animated.parallel([
+      Animated.timing(chatOpacity, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(homeOpacity, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowChatHistory(false));
+  };
+
+  // Clear chat and switch to Home view
+  const handleClearChat = () => {
+    setChatMessages([]);
+    if (showChatHistory) {
+      hideChatView();
     }
+    showNotification('Chat cleared', 'success');
+  };
 
-    // Helper function for Notification Message
-    function showNotification(msg, type = 'success') {
-      setNotification({ visible: true, message: msg, type });
+  // Handle audio recording complete
+  const handleRecordingComplete = async ({ input_type, input_data }) => {
+    try {
+      showNotification('Sending audio to server...', 'info');
+
+      const response = await handleUserInput(input_type, input_data);
+      console.log('Backend response:', response);
+
+      const messageUI = (
+        <GenerateMessageUI
+          userQuery={response.userQuery}
+          actionType={response.actionType}
+          actionData={response.actionData}
+        />
+      );
+
+      setChatMessages(prev => [messageUI, ...prev]);
+      showChatView();
+
+      setGetBackendResponse(response);
+    } catch (error) {
+      console.error('Error processing recording:', error);
+      showNotification('Failed to process recording.', 'error');
     }
+  };
 
-    const handleTextSubmit = (text) => {
-      console.log('User typed:', text);
-      // TODO: Process or send this text to your backend or assistant logic
-      setNotification({ visible: true, message: 'Text submitted!', type: 'success' });
-      setTimeout(() => setNotification({ visible: false, message: '', type: '' }), 3000);
-    };
+  // Handle text input submit
+  const handleTextSubmit = async (text) => {
+    try {
+      showNotification('Sending text to server...', 'info');
 
+      const response = await handleUserInput('text', text);
+      console.log('Backend response from text:', response);
+
+      const messageUI = (
+        <GenerateMessageUI
+          userQuery={response.userQuery}
+          actionType={response.actionType}
+          actionData={response.actionData}
+        />
+      );
+
+      setChatMessages(prev => [messageUI, ...prev]);
+      showChatView();
+
+      setGetBackendResponse(response);
+    } catch (err) {
+      console.error('Failed to handle text input:', err);
+      showNotification('Error processing text input', 'error');
+    }
+  };
+
+  // Toggle between Home and Chat views with animation
+  const toggleView = () => {
+    if (showChatHistory) {
+      hideChatView();
+    } else {
+      showChatView();
+    }
+  };
+
+  if (!fontsLoaded) {
+    return null; // or a loading spinner
+  }
+
+  function showNotification(msg, type = 'success') {
+    setNotification({ visible: true, message: msg, type });
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -51,26 +156,35 @@ export default function HomeScreen() {
 
       {/* Top Navigation Bar */}
       <View style={styles.topBar}>
-        <FontAwesome6 name="bars-staggered" size={20} color="#333" style={styles.menuIcon} />
+        <TopLeftToggleIcon showChatHistory={showChatHistory} toggleView={toggleView} />
         <Text style={styles.title}>ASNA</Text>
-        <FontAwesome6 name="pen-to-square" size={20} color="#333" style={styles.editIcon} />
+        <EditClearButton onPress={handleClearChat} />
       </View>
 
-      {/* Main Content */}
-      <View style={styles.mainContent}>
-        <Text style={styles.prompt}>What can I help with?</Text>
+      {/* Middle Section with Animated Fade Transition */}
+      <>
+        <Animated.View style={[styles.animatedView, { opacity: homeOpacity, flex: 1 }]}>
+          <HomeMiddleSection />
+        </Animated.View>
 
-        <View style={styles.row}>
-          <ActionChip icon={<FontAwesome5 name="image" size={16} color="#333" />} label="Create image" />
-          <ActionChip icon={<FontAwesome5 name="image" size={16} color="#333" />} label="Surprise me" />
-        </View>
-
-        <View style={styles.row}>
-          <ActionChip icon={<FontAwesome6 name="pen-to-square" size={16} color="#333" />} label="Help me write" />
-          <ActionChip icon={<Feather name="zap" size={16} color="#333" />} label="Brainstorm" />
-          <ActionChip label="More" />
-        </View>
-      </View>
+        <Animated.View
+          style={[
+            styles.animatedView,
+            {
+              opacity: chatOpacity,
+              flex: 1,
+              position: 'absolute',
+              top: 70,
+              left: 0,
+              right: 0,
+              bottom: 150,
+            },
+          ]}
+          pointerEvents={showChatHistory ? 'auto' : 'none'}
+        >
+          <ChatHistory messages={chatMessages} />
+        </Animated.View>
+      </>
 
       {/* Bottom Input Bar */}
       <View style={styles.bottomBar}>
@@ -78,25 +192,24 @@ export default function HomeScreen() {
           <Ionicons name="mic" size={28} color="#fff" />
         </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.keyboardIcon}
-            onPress={() => setShowTextInputModal(true)}
-          >
-            <MaterialCommunityIcons name="keyboard" size={30} color="#000" />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.keyboardIcon} onPress={() => setShowTextInputModal(true)}>
+          <MaterialCommunityIcons name="keyboard" size={30} color="#000" />
+        </TouchableOpacity>
       </View>
 
       {/* Mic Interface */}
-      <MicInterface visible={showMicModal} onClose={() => setShowMicModal(false)} onFinish={handleRecordingComplete} />
-      
+      <MicInterface
+        visible={showMicModal}
+        onClose={() => setShowMicModal(false)}
+        onFinish={handleRecordingComplete}
+      />
+
       {/* TextInput Interface */}
       <TextInputModal
         visible={showTextInputModal}
         onClose={() => setShowTextInputModal(false)}
         onSubmit={handleTextSubmit}
       />
-
-
 
       {/* Notification Message */}
       <NotificationMessage
@@ -108,13 +221,6 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const ActionChip = ({ icon, label }) => (
-  <TouchableOpacity style={styles.chip} >
-    {icon && <View style={styles.chipIcon}>{icon}</View>}
-    <Text style={styles.chipText}>{label}</Text>
-  </TouchableOpacity>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -129,66 +235,20 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 7,
     backgroundColor: '#fff',
-    // borderBottomWidth: 0.3,
-    // borderBottomColor: '#ddd',
-  },
-  menuIcon: {
-    padding: 4,
-  },
-  editIcon: {
-    padding: 4,
   },
   title: {
     fontSize: 35,
     color: '#333',
-    fontFamily: 'Tektur_900Black'
-  },
-  mainContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  prompt: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#333',
-    marginBottom: 32,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 8,
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginHorizontal: 4,
-  },
-  chipIcon: {
-    marginRight: 6,
-  },
-  chipText: {
-    fontSize: 14,
-    color: '#333',
+    fontFamily: 'Tektur_900Black',
   },
   bottomBar: {
     backgroundColor: '#fff',
     paddingVertical: 15,
     paddingHorizontal: 20,
-    paddingBottom:40,
+    paddingBottom: 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    // borderWidth:.3
   },
   micButton: {
     width: 60,
@@ -209,5 +269,8 @@ const styles = StyleSheet.create({
     bottom: 25,
     color: 'red',
     backgroundColor: 'transparent',
+  },
+  animatedView: {
+    // Common animated view styles if needed
   },
 });

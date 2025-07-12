@@ -2,14 +2,21 @@ import { Audio, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { uploadAudio } from './utility/uploadData_mob_to_pc';
 
 const { height: screenHeight } = Dimensions.get('window');
 
 export default function MicInterface({ visible, onClose, onFinish }) {
   const [recording, setRecording] = useState(null);
-  const videoRef = useRef(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (visible) {
+      startRecording();
+    } else {
+      stopAndDeleteRecording(); // Cleanup if closed early
+    }
+  }, [visible]);
 
   useEffect(() => {
     if (visible && videoLoaded) {
@@ -18,14 +25,6 @@ export default function MicInterface({ visible, onClose, onFinish }) {
       videoRef.current?.pauseAsync();
     }
   }, [visible, videoLoaded]);
-
-  useEffect(() => {
-    if (visible) {
-      startRecording();
-    } else {
-      stopAndDeleteRecording(); // cleanup if closed directly
-    }
-  }, [visible]);
 
   const startRecording = async () => {
     try {
@@ -45,35 +44,30 @@ export default function MicInterface({ visible, onClose, onFinish }) {
       await newRecording.startAsync();
       setRecording(newRecording);
     } catch (error) {
-      console.error('Failed to start recording', error);
+      console.error('Start recording failed:', error);
     }
   };
 
-const stopAndDeleteRecording = async () => {
-  try {
-    if (!recording) return;
+  const stopAndDeleteRecording = async () => {
+    try {
+      if (!recording) return;
 
-    const status = await recording.getStatusAsync();
+      const status = await recording.getStatusAsync();
+      if (status.isRecording) {
+        await recording.stopAndUnloadAsync();
+      }
 
-    if (status.isRecording) {
-      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      if (uri) {
+        await FileSystem.deleteAsync(uri, { idempotent: true });
+        console.log('Recording discarded.');
+      }
+    } catch (error) {
+      console.error('Failed to discard recording:', error);
+    } finally {
+      setRecording(null);
     }
-
-    const uri = recording.getURI();
-
-    // Delete file if it exists
-    if (uri) {
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-      console.log('Recording discarded.');
-    }
-
-  } catch (error) {
-    console.error('Failed to discard recording', error);
-  } finally {
-    setRecording(null);
-  }
-};
-
+  };
 
   const handleSubmit = async () => {
     try {
@@ -81,18 +75,20 @@ const stopAndDeleteRecording = async () => {
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-
       const destPath = FileSystem.documentDirectory + `recording-${Date.now()}.m4a`;
+
       await FileSystem.moveAsync({ from: uri, to: destPath });
+      console.log('Recording saved to:', destPath);
 
-      await uploadAudio(destPath);
-      console.log('Audio uploaded:', destPath);
+      // Just return input_type and input_data to parent
+      if (onFinish) onFinish({ input_type: 'audio', input_data: destPath });
 
-      if (onFinish) onFinish(destPath);
       setRecording(null);
-      onClose(); // close modal
+      onClose();
+
     } catch (error) {
-      console.error('Failed to stop/upload recording', error);
+      console.error('Recording submit error:', error);
+      Alert.alert('Error', 'Failed to process your audio.');
     }
   };
 
@@ -100,15 +96,12 @@ const stopAndDeleteRecording = async () => {
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.micSheet}>
-
-          {/* Header Row: Cross - Listening - Submit */}
+          {/* Header Row */}
           <View style={styles.headerRow}>
-            <TouchableOpacity
-                onPress={async () => {
-                  await stopAndDeleteRecording();
-                  onClose();
-                }}
-              >
+            <TouchableOpacity onPress={async () => {
+              await stopAndDeleteRecording();
+              onClose();
+            }}>
               <Text style={styles.icon}>×</Text>
             </TouchableOpacity>
 
@@ -119,7 +112,7 @@ const stopAndDeleteRecording = async () => {
             </TouchableOpacity>
           </View>
 
-          {/* Mic animation */}
+          {/* Mic Animation */}
           <View style={styles.videoContainer}>
             <Video
               ref={videoRef}

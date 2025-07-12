@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import {
-    Dimensions,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const { height: screenHeight } = Dimensions.get('window');
@@ -16,12 +16,24 @@ const { height: screenHeight } = Dimensions.get('window');
 export default function TextInputModal({ visible, onClose, onSubmit }) {
   const [text, setText] = useState('');
 
-  const handleSubmit = () => {
-    if (text.trim().length > 0) {
-      onSubmit(text.trim());
-      setText('');
-      onClose();
+  const handleSubmit = async () => {
+    const trimmedText = text.trim();
+    if (trimmedText.length === 0) {
+      console.warn('Text input is empty. Not submitting.');
+      return;
     }
+
+    try {
+      if (onSubmit) {
+        await onSubmit(trimmedText); // ⬅️ Forward to HomeScreen
+        console.log('Text submitted to parent:', trimmedText);
+      }
+    } catch (error) {
+      console.error('❌ Failed to submit text input:', error);
+    }
+
+    setText('');
+    onClose();
   };
 
   const handleClose = () => {
@@ -110,8 +122,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     borderWidth: 1,
     borderRadius: 10,
-    textAlignVertical: 'top', // for Android multiline alignment
-    // backgroundColor: '#fafafa',
-    backgroundColor: '#fff'
+    textAlignVertical: 'top',
+    backgroundColor: '#fff',
   },
 });
