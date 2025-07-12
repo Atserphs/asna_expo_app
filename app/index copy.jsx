@@ -8,12 +8,11 @@ import TopLeftToggleIcon from '@/components/TopLeftToggleIcon';
 import { handleUserInput } from '@/components/utility/dataManager';
 
 import NotificationMessage from '@/components/notification_message';
-import * as IntentLauncher from 'expo-intent-launcher';
 
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { Animated, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -83,30 +82,30 @@ export default function HomeScreen() {
   };
 
   // Handle audio recording complete
-const handleRecordingComplete = async ({ input_type, input_data }) => {
-  try {
-    showNotification('Sending audio to server...', 'info');
+  const handleRecordingComplete = async ({ input_type, input_data }) => {
+    try {
+      showNotification('Sending audio to server...', 'info');
 
-    const response = await handleUserInput(input_type, input_data);
-    console.log('Backend response:', response);
+      const response = await handleUserInput(input_type, input_data);
+      console.log('Backend response:', response);
 
-    const messageUI = (
-      <GenerateMessageUI
-        userQuery={response.userQuery}
-        actionType={response.actionType}
-        actionData={response.actionData}
-      />
-    );
+      const messageUI = (
+        <GenerateMessageUI
+          userQuery={response.userQuery}
+          actionType={response.actionType}
+          actionData={response.actionData}
+        />
+      );
 
-    setChatMessages(prev => [messageUI, ...prev]);
-    showChatView();
-    setGetBackendResponse(response);
+      setChatMessages(prev => [messageUI, ...prev]);
+      showChatView();
 
-  } catch (error) {
-    console.error('Error processing recording:', error);
-    showNotification('Failed to process recording.', 'error');
-  }
-};
+      setGetBackendResponse(response);
+    } catch (error) {
+      console.error('Error processing recording:', error);
+      showNotification('Failed to process recording.', 'error');
+    }
+  };
 
   // Handle text input submit
   const handleTextSubmit = async (text) => {
@@ -115,21 +114,6 @@ const handleRecordingComplete = async ({ input_type, input_data }) => {
 
       const response = await handleUserInput('text', text);
       console.log('Backend response from text:', response);
-
-      // // Example: open WhatsApp
-      // Linking.openURL('whatsapp://send?text=Hello').catch(() => {
-      //   showNotification('Unable to open WhatsApp. Make sure it is installed.', 'error');
-      // });
-      // ✅ Dummy: Open Gallery App
-    // IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-    //   data: 'content://media/internal/images/media',
-    //   flags: 1,
-    // });
-      if (Platform.OS === 'android') {
-        await IntentLauncher.startActivityAsync('android.intent.action.SHOW_ALARMS');
-      } else {
-        alert('This only works on Android.');
-      }
 
       const messageUI = (
         <GenerateMessageUI

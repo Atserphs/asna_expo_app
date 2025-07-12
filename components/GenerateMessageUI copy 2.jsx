@@ -18,7 +18,7 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
       return (
         <View>
           <ComponentSystemMessage/>
-          <AlarmComponent/>
+          <AlarmComponent/>;
         </View>
       );
 
@@ -26,7 +26,7 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
       return (
         <View>
           <ComponentSystemMessage/>
-          <DateComponent/>
+          <DateComponent/>;
         </View>
       );
 

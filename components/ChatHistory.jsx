@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     flexGrow: 1,
     justifyContent: 'flex-start', // ensure messages start from bottom
-    borderColor:'yellow',
-    borderWidth:1
+    // borderColor:'yellow',
+    // borderWidth:1
   },
   messageWrapper: {
     marginVertical: 6,
@@ -43,7 +43,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
- 
   },
   emptyText: {
     color: 'gray',

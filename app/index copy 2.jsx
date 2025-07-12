@@ -8,12 +8,11 @@ import TopLeftToggleIcon from '@/components/TopLeftToggleIcon';
 import { handleUserInput } from '@/components/utility/dataManager';
 
 import NotificationMessage from '@/components/notification_message';
-import * as IntentLauncher from 'expo-intent-launcher';
 
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { Animated, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -120,16 +119,7 @@ const handleRecordingComplete = async ({ input_type, input_data }) => {
       // Linking.openURL('whatsapp://send?text=Hello').catch(() => {
       //   showNotification('Unable to open WhatsApp. Make sure it is installed.', 'error');
       // });
-      // ✅ Dummy: Open Gallery App
-    // IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-    //   data: 'content://media/internal/images/media',
-    //   flags: 1,
-    // });
-      if (Platform.OS === 'android') {
-        await IntentLauncher.startActivityAsync('android.intent.action.SHOW_ALARMS');
-      } else {
-        alert('This only works on Android.');
-      }
+      SendIntentAndroid.openApp('whatsapp');  
 
       const messageUI = (
         <GenerateMessageUI

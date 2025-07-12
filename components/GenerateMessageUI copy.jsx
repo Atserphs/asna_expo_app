@@ -1,9 +1,7 @@
 // components/GenerateMessageUI.jsx
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import AlarmComponent from './actions/ComponentAlarm';
 import DateComponent from './actions/ComponentDate';
-import ComponentSystemMessage from './actions/ComponentSystemMessage';
-import ComponentUserMessage from './actions/ComponentUserMessage';
 import ComponentWebSearch from './actions/ComponentWebSearch';
 import YoutubeSearchComponent from './actions/ComponentYoutube';
 
@@ -15,42 +13,16 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
     //   return <Text style={{ padding: 10, color: 'green' }}>hello this is the text</Text>;
 
     case 'alarm_setup_action':
-      return (
-        <View>
-          <ComponentSystemMessage/>
-          <AlarmComponent/>
-        </View>
-      );
+      return <AlarmComponent/>;
 
     case 'date_view_action':
-      return (
-        <View>
-          <ComponentSystemMessage/>
-          <DateComponent/>
-        </View>
-      );
+      return <DateComponent/>;
 
     case 'youtube_search_action':
-      return (
-        <View>
-          <ComponentSystemMessage/>
-          <YoutubeSearchComponent/>
-        </View>
-      );
+      return <YoutubeSearchComponent/>
 
     case 'web_search_action':
-      return (
-        <View>
-          <ComponentSystemMessage/>
-          <ComponentWebSearch/>
-        </View>
-      );
-    
-    case 'user_query_action':
-      return <ComponentUserMessage/>
-
-    case 'system_response_action':
-      return <ComponentSystemMessage/>
+      return <ComponentWebSearch/>;
 
     default:
       return <Text style={{ padding: 10, color: 'red' }}>Unknown action: {actionType}</Text>;
