@@ -1,3 +1,4 @@
+// components/ChatHistory.jsx
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 export default function ChatHistory({ messages }) {

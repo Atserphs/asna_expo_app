@@ -11,9 +11,6 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
   console.log('GenerateMessageUI :', { userQuery, actionType, actionData });
 
   switch (actionType) {
-    // case 'alarm_setup_action':
-    //   return <Text style={{ padding: 10, color: 'green' }}>hello this is the text</Text>;
-
     case 'alarm_setup_action':
       return (
         <View>
@@ -47,7 +44,8 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
       );
     
     case 'user_query_action':
-      return <ComponentUserMessage/>
+      // Passing userQuery as prop here:
+      return <ComponentUserMessage sampleMessage={userQuery} />;
 
     case 'system_response_action':
       return <ComponentSystemMessage/>
