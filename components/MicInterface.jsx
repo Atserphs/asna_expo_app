@@ -1,3 +1,4 @@
+// components/MicInterface.jsx
 import { Audio, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   icon: {
     fontSize: 32,

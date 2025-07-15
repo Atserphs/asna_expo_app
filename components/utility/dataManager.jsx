@@ -1,3 +1,4 @@
+// components/utility/DataManager.jsx
 export async function handleUserInput(inputType, inputData) {
   try {
     const apiUrl = 'http://192.168.18.8:5000/process';

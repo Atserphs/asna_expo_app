@@ -21,9 +21,9 @@ import { StyleSheet } from 'react-native';
 const RootLayout = () => {
   return (
     <Stack>
-      {/* Optional: Customize specific screens
-      <Stack.Screen name="index" options={{ title: 'Homee', headerShown: true }} />
-      <Stack.Screen name="about/index" options={{ title: 'About' }} /> */}
+      {/* Optional: Customize specific screens */}
+      <Stack.Screen name="index" options={{ title: '', headerShown: false }} />
+      {/* <Stack.Screen name="about/index" options={{ title: 'About' }} /> */}
     </Stack>
   );
 };

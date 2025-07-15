@@ -1,3 +1,4 @@
+// components/TextInputModal.jsx
 import { useState } from 'react';
 import {
   Dimensions,

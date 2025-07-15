@@ -16,6 +16,7 @@ const styles = StyleSheet.create({
   container: {
     alignSelf: 'flex-end', // Aligns message to right
     marginVertical: 6,
+    marginTop:30,
     paddingHorizontal: 10,
   },
   bubble: {

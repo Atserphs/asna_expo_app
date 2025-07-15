@@ -1,3 +1,4 @@
+// components/NotificationMessage.jsx
 import { useEffect, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, Text } from 'react-native';
 
@@ -44,12 +45,13 @@ export default function NotificationMessage({ message, visible, onHide, duration
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 50,
-    right: 20,
+    top: 100,
+    left: '50%',
+    transform: [{ translateX: '-50%' }],
     backgroundColor: 'rgba(0,0,0,0.8)',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 20,
     maxWidth: width * 0.7,
     zIndex: 9999, // make sure it's above everything
     shadowColor: '#000',

@@ -2,13 +2,11 @@ import ChatHistory from '@/components/ChatHistory';
 import EditClearButton from '@/components/EditClearButton';
 import GenerateMessageUI from '@/components/GenerateMessageUI';
 import HomeMiddleSection from '@/components/HomeMiddleSection';
-import MicInterface from '@/components/mic_interface';
+import MicInterface from '@/components/MicInterface';
+import NotificationMessage from '@/components/NotificationMessage';
 import TextInputModal from '@/components/TextInputModal';
 import TopLeftToggleIcon from '@/components/TopLeftToggleIcon';
-import { handleUserInput } from '@/components/utility/dataManager';
-
-import NotificationMessage from '@/components/notification_message';
-
+import { handleUserInput } from '@/components/utility/DataManager';
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
@@ -89,20 +87,21 @@ export default function HomeScreen() {
       const response = await handleUserInput(input_type, input_data);
       console.log('Backend response:', response);
 
-      const messageUI = (
+      // Shows the user query of voice recording after trancribe received
+      const userQueryMessageUI = (
         <GenerateMessageUI
           userQuery={response.userQuery}
           actionType={response.actionType}
-          actionData={response.actionData}
+          actionData={null}
         />
       );
 
       // Upload message to ChatMessages state and show ChatHistory.jsx Component
-      setChatMessages(prev => [messageUI, ...prev]);
+      setChatMessages(prev => [userQueryMessageUI, ...prev]);
       showChatView();
 
-      // Now pass the transcribed text to handleTextSubmit
-      await handleTextSubmit(response.userQuery); // this goes through Rasa
+      // Now pass the transcribed text to handleUserQuery
+      await handleUserQuery(response.userQuery); // this goes to vosk
       
       setGetBackendResponse(response);
 
@@ -116,25 +115,53 @@ export default function HomeScreen() {
   const handleTextSubmit = async (text) => {
     try {
       showNotification('Sending text to server...', 'info');
+      console.log(text);
 
-      const response = await handleUserInput('text', text);
-      console.log('Backend response from text:', response);
-
-      const messageUI = (
+      //Show user query for text type input
+      const userQueryMessageUI = (
         <GenerateMessageUI
-          userQuery={response.userQuery}
-          actionType={response.actionType}
-          actionData={response.actionData}
+          userQuery={text}
+          actionType={"user_query_action"}
+          actionData={null}
         />
       );
 
-      setChatMessages(prev => [messageUI, ...prev]);
+      // Upload message to ChatMessages state and show ChatHistory.jsx Component
+      setChatMessages(prev => [userQueryMessageUI, ...prev]);
       showChatView();
 
-      setGetBackendResponse(response);
+      // Handing over data to handleUserQuery
+      handleUserQuery(text);
+
+
     } catch (err) {
       console.error('Failed to handle text input:', err);
       showNotification('Error processing text input', 'error');
+    }
+  };
+
+  // Handle user query in index
+  const handleUserQuery = async (text) => {
+    try {
+          // Send to server and get system response and show
+          const response = await handleUserInput('text', text);
+          console.log('Backend response from text:', response);
+
+          const messageUI = (
+            <GenerateMessageUI
+              userQuery={response.userQuery}
+              actionType={response.actionType}
+              actionData={response.actionData}
+            />
+          );
+
+          setChatMessages(prev => [messageUI, ...prev]);
+          showChatView();
+
+          setGetBackendResponse(response);
+        } catch (err) {
+          console.error('Failed to handle request to server input:', err);
+          showNotification('Error processing request to server', 'error');
     }
   };
 
@@ -237,9 +264,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 30,
+    // marginTop: 20,
+    height: 70,
     paddingBottom: 7,
     backgroundColor: '#fff',
+    // zIndex: 100,
   },
   title: {
     fontSize: 35,
@@ -248,7 +278,8 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     backgroundColor: '#fff',
-    paddingVertical: 30,
+  
+    paddingVertical: 25,
     paddingHorizontal: 20,
     paddingBottom: 40,
     flexDirection: 'row',

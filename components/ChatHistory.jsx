@@ -29,15 +29,15 @@ export default function ChatHistory({ messages }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    marginBottom:20,
+    paddingHorizontal: 14,
     flexGrow: 1,
     justifyContent: 'flex-start', // ensure messages start from bottom
     // borderColor:'yellow',
-    // borderWidth:1
+    // borderWidth:1,
   },
   messageWrapper: {
-    marginVertical: 6,
+    marginVertical: 4,
   },
   emptyContainer: {
     flex: 1,
