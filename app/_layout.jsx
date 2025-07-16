@@ -22,8 +22,8 @@ const RootLayout = () => {
   return (
     <Stack>
       {/* Optional: Customize specific screens */}
-      <Stack.Screen name="index" options={{ title: 'Home', headerShown: true }} />
-      <Stack.Screen name="about/index" options={{ title: 'About' }} />
+      <Stack.Screen name="index" options={{ title: '', headerShown: false }} />
+      {/* <Stack.Screen name="about/index" options={{ title: 'About' }} /> */}
     </Stack>
   );
 };
