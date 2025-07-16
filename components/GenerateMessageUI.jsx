@@ -9,14 +9,19 @@ import ComponentWebSearch from './actions/ComponentWebSearch';
 import YoutubeSearchComponent from './actions/ComponentYoutube';
 
 export default function GenerateMessageUI({ userQuery, actionType, actionData }) {
-  console.log('GenerateMessageUI :', { userQuery, actionType, actionData });
+  console.log('GenerateMessageUII :', { userQuery, actionType, actionData });
 
   switch (actionType) {
     case 'alarm_setup_action':
       return (
         <View>
-          <ComponentSystemMessage/>
-          <ComponentAlarm/>
+          {/* customMessage to send t0 <ComponentSystemMessage/ > */}
+          <ComponentSystemMessage sampleMessage={actionData.system_response || "Something went wrong."}/>
+
+          {(actionData.status_message === 'known_alarm_command' && 
+            (actionData.mode === 'offset' || actionData.mode === 'absolute')) && (
+              <ComponentAlarm sampleMessage={actionData} />
+          )}
         </View>
       );
 
@@ -58,7 +63,7 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
 
     case 'system_response_action':
       //console.log(actionData.message);
-      return <ComponentSystemMessage sampleMessage={actionData.message || "Sorry, I don't understand."}/>;
+      return <ComponentSystemMessage sampleMessage={actionData.system_response || "Sorry, I don't understand."}/>;
 
     default:
       return <Text style={{ padding: 10, color: 'red' }}>Unknown action: {actionType}</Text>;

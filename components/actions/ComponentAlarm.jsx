@@ -1,5 +1,6 @@
-// components/actions/ComponentAlarm.jsx
+// components/ComponentAlarm.jsx
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRef } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 const deviceWidth = Dimensions.get('window').width;
@@ -8,75 +9,52 @@ const CARD_WIDTH = deviceWidth * 0.4;
 const CARD_HEIGHT = deviceHeight * 0.08;
 
 const sampleData = {
-  mode: 'offset',       // 'offset' or 'absolute'
+  mode: 'offset',
   time: '11:57',
   time_type: 'PM',
   date: '2025-07-13',
-  offset: 5,            // in minutes, used only if mode === 'offset'
+  offset: 5,
 };
 
-export default function ComponentAlarm({ alarmData = null }) {
-  const data = alarmData || sampleData;
+export default function ComponentAlarm({ sampleMessage }) {
 
-  // Calculate alarm date/time
+
+  const data = sampleMessage || sampleData;
+  console.log('print from component', sampleMessage);
+
+  const lastAlarmTime = useRef(null);
+
+  if (!data || data.status_message === 'unknown_alarm_command') {
+    return null;
+  }
+
   let alarmDateObj;
+
   if (data.mode === 'offset') {
     const now = new Date();
     alarmDateObj = new Date(now.getTime() + (data.offset || 0) * 60000);
-  } else {
-    alarmDateObj = new Date(data.date);
-    const [hours, minutes] = data.time.split(':');
-    let hour = parseInt(hours, 10);
-    if (data.time_type.toUpperCase() === 'PM' && hour < 12) hour += 12;
-    if (data.time_type.toUpperCase() === 'AM' && hour === 12) hour = 0;
-    alarmDateObj.setHours(hour, parseInt(minutes, 10), 0, 0);
+  } else if (data.mode === 'absolute') {
+    const [year, month, day] = data.date.split('-').map(Number);
+    const hourRaw = parseInt(data.time, 10);
+    let hour = hourRaw;
+    if (data.time_type?.toUpperCase() === 'PM' && hour < 12) hour += 12;
+    if (data.time_type?.toUpperCase() === 'AM' && hour === 12) hour = 0;
+
+    alarmDateObj = new Date(year, month - 1, day, hour, 0, 0);
   }
 
-  // Format time and date for UI
   const hours24 = alarmDateObj.getHours();
   const hours12 = ((hours24 + 11) % 12) + 1;
   const minutesStr = alarmDateObj.getMinutes().toString().padStart(2, '0');
   const meridian = hours24 >= 12 ? 'PM' : 'AM';
   const finalTime = `${hours12}:${minutesStr} ${meridian}`;
   const finalDate = alarmDateObj.toDateString().split(' ').slice(0, 3).join(', ');
-
   const [hourMinute, mer] = finalTime.split(' ');
 
-  // useEffect(() => {
-  //   async function scheduleAlarmNotification() {
-  //     try {
-  //       // Request notification permissions
-  //       const { status } = await Notifications.requestPermissionsAsync();
-  //       if (status !== 'granted') {
-  //         Alert.alert('Permission required', 'Please enable notifications to receive alarms.');
-  //         return;
-  //       }
+  console.log('Final Alarm Time:', finalTime);
+  console.log('Final Alarm Date:', finalDate);
 
-  //       // Cancel all previously scheduled notifications (optional)
-  //       // await Notifications.cancelAllScheduledNotificationsAsync();
 
-  //       // Schedule notification
-  //       await Notifications.scheduleNotificationAsync({
-  //         content: {
-  //           title: 'Alarm',
-  //           body: `Alarm set for ${finalTime} on ${finalDate}`,
-  //           sound: true,
-  //           vibrate: true,
-  //           priority: Notifications.AndroidNotificationPriority.HIGH,
-  //           sticky: false,
-  //           color: '#FF0000',
-  //         },
-  //         trigger: alarmDateObj,
-  //       });
-
-  //       console.log('Alarm notification scheduled for:', alarmDateObj.toString());
-  //     } catch (err) {
-  //       console.error('Failed to schedule alarm notification:', err);
-  //     }
-  //   }
-
-  //   scheduleAlarmNotification();
-  // }, [alarmData]);
 
   return (
     <View style={styles.card}>

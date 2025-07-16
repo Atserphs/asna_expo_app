@@ -79,7 +79,7 @@ export default function MicInterface({ visible, onClose, onFinish }) {
       const destPath = FileSystem.documentDirectory + `recording-${Date.now()}.m4a`;
 
       await FileSystem.moveAsync({ from: uri, to: destPath });
-      console.log('Recording saved to:', destPath);
+      // console.log('Recording saved to:', destPath);
 
       // Just return input_type and input_data to parent
       if (onFinish) onFinish({ input_type: 'audio', input_data: destPath });
@@ -135,7 +135,7 @@ export default function MicInterface({ visible, onClose, onFinish }) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'rgba(f, f, f, 0.1)',
     justifyContent: 'flex-end',
   },
   micSheet: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,

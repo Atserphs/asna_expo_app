@@ -9,8 +9,10 @@ import TopLeftToggleIcon from '@/components/TopLeftToggleIcon';
 import { handleUserInput } from '@/components/utility/DataManager';
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { useRef, useState } from 'react';
 import { Animated, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -85,7 +87,7 @@ export default function HomeScreen() {
       showNotification('Sending audio to server...', 'info');
 
       const response = await handleUserInput(input_type, input_data);
-      console.log('Backend response:', response);
+      // console.log('Backend response:', response);
 
       // Shows the user query of voice recording after trancribe received
       const userQueryMessageUI = (
@@ -115,7 +117,7 @@ export default function HomeScreen() {
   const handleTextSubmit = async (text) => {
     try {
       showNotification('Sending text to server...', 'info');
-      console.log(text);
+      // console.log(text);
 
       //Show user query for text type input
       const userQueryMessageUI = (
@@ -145,7 +147,12 @@ export default function HomeScreen() {
     try {
           // Send to server and get system response and show
           const response = await handleUserInput('text', text);
-          console.log('Backend response from text:', response);
+          // console.log('Backend response from text:', response);
+
+          // 👉 Handle alarm if it's a known command
+          if (response.actionType === 'alarm_setup_action' || response.actionData.status_message === 'known_alarm_command') {
+            await handleAlarmAction(response.actionData);
+          }
 
           const messageUI = (
             <GenerateMessageUI
@@ -162,6 +169,55 @@ export default function HomeScreen() {
         } catch (err) {
           console.error('Failed to handle request to server input:', err);
           showNotification('Error processing request to server', 'error');
+    }
+  };
+
+  // Handle alarm setup in clock app
+  const handleAlarmAction = async (data) => {
+    try {
+      if (!data || data.status_message === 'unknown_alarm_command') return;
+
+      let alarmDateObj;
+
+      if (data.mode === 'offset') {
+        const [year, month, day] = data.date.split('-').map(Number);
+
+        // JavaScript months are 0-indexed (0 = January, 11 = December) 
+        const baseDate = new Date(year, month - 1, day); // JavaScript’s Date constructor - new Date(YEAR, MONTH_INDEX, DAY, HOUR, MINUTES, SECONDS)
+
+        alarmDateObj = new Date(baseDate.getTime() + (data.offset || 0) * 60000); 
+      } 
+      else if (data.mode === 'absolute') {
+        const [year, month, day] = data.date.split('-').map(Number);
+        console.log('date received:',year,"-",month,"-",day);
+        let hour = parseInt(data.time, 10);
+        const isPM = data.time_type?.toUpperCase() === 'PM';
+
+        if (isPM && hour < 12) hour += 12;
+        if (!isPM && hour === 12) hour = 0;
+
+        alarmDateObj = new Date(year, month - 1, day, hour, 0, 0);
+      } else {
+        return;
+      }
+
+      const hour = alarmDateObj.getHours();
+      const minutes = alarmDateObj.getMinutes();
+
+      await IntentLauncher.startActivityAsync('android.intent.action.SET_ALARM', {
+        extra: {
+          'android.intent.extra.alarm.HOUR': hour,
+          'android.intent.extra.alarm.MINUTES': minutes,
+          'android.intent.extra.alarm.MESSAGE': 'Alarm from assistant of homepage',
+          'android.intent.extra.alarm.SKIP_UI': false,
+        },
+      });
+
+      showNotification(`Alarm set for ${alarmDateObj.toLocaleTimeString()}`, 'success');
+
+    } catch (error) {
+      console.error('Failed to handle alarm action:', error);
+      showNotification('Failed to set alarm', 'error');
     }
   };
 
