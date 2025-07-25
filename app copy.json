@@ -15,7 +15,8 @@
       "permissions": [
         "RECORD_AUDIO",
         "READ_CONTACTS",
-        "POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
         "com.android.alarm.permission.SET_ALARM"
       ],
       "adaptiveIcon": {

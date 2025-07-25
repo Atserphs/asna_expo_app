@@ -2,6 +2,7 @@
 import { Text, View } from 'react-native';
 import ComponentAlarm from './actions/ComponentAlarm';
 import DateComponent from './actions/ComponentDate';
+import ComponentSingleContact from './actions/ComponentSingleContact';
 import ComponentSystemMessage from './actions/ComponentSystemMessage';
 import ComponentTime from './actions/ComponentTime';
 import ComponentUserMessage from './actions/ComponentUserMessage';
@@ -12,6 +13,36 @@ export default function GenerateMessageUI({ userQuery, actionType, actionData })
   console.log('GenerateMessageUII :', { userQuery, actionType, actionData });
 
   switch (actionType) {
+    case 'no_contact_record_case':
+      // Passing userQuery as prop here:
+      return ( 
+        <View>
+          <ComponentSystemMessage sampleMessage={actionData.text || "Something went wrong."}/>
+          <ComponentSingleContact actionData={actionData} actionType={actionType}/>
+        </View>
+      );
+
+    case 'multiple_contact_record_case':
+      // Passing userQuery as prop here:
+      return <ComponentSystemMessage sampleMessage={actionData.text || "Something went wrong."}/>;
+    
+    case 'single_contact_record_case':
+      // Passing userQuery as prop here:
+      return <ComponentSingleContact actionData={actionData} actionType={actionType}/>;
+    
+    case 'make_call_name':
+      // Passing userQuery as prop here:
+      return <ComponentSystemMessage sampleMessage={actionData.text || "Something went wrong."}/>;
+
+    case 'make_call_number':
+      // Passing userQuery as prop here:
+      return ( 
+        <View>
+          <ComponentSystemMessage sampleMessage={actionData.text || "Something went wrong."}/>
+          <ComponentSingleContact actionData={actionData} actionType={actionType}/>
+        </View>
+      );
+
     case 'alarm_setup_action':
       return (
         <View>
