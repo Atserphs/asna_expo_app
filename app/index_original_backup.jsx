@@ -151,6 +151,7 @@ export default function HomeScreen() {
           const response = await handleUserInput('text', text);
           // console.log('Backend response from text:', response);
 
+          // Generating system response from Rasa to chathistory  
           const messageUI = (
             <GenerateMessageUI
               userQuery={response.userQuery}
@@ -167,6 +168,7 @@ export default function HomeScreen() {
             await handleAlarmAction(response.actionData);
           }
 
+          // 👉 Handle calling with name
           if (response.actionType === 'make_call_name'){
             if (response.actionData.custom.receiver_name != 'None')
             {
@@ -194,7 +196,7 @@ export default function HomeScreen() {
 
               // Now it's safe to use contactsToShow
               if (get_new_json_rasa.contactsToShow) {
-                console.log('contactsToShow', get_new_json_rasa.contactsToShow);
+                // console.log('contactsToShow', get_new_json_rasa.contactsToShow);
                 const contactUI = (
                   <ComponentMultipleContact contacts={get_new_json_rasa.contactsToShow} />
                 );
@@ -215,13 +217,11 @@ export default function HomeScreen() {
                 );
                 setChatMessages(prev => [downMessageUI2, ...prev]);
                 showChatView();
-              }
-
-              
-              
+              }              
             }
           }
-          
+
+          // 👉 Handle calling with number
           if(response.actionType === 'make_call_number'){
             if (response.actionData.custom.receiver_number != 'None')
             {
@@ -373,7 +373,7 @@ export default function HomeScreen() {
         showNotification(`Multiple contacts found: ${names}`, 'error');
       } 
 
-      // If all good goto dialer
+      // If all good, go to dialer
       else {
         const number = matchedContacts[0].phoneNumbers[0].number;
         console.log('📞 Dialing number:', number);
@@ -382,8 +382,16 @@ export default function HomeScreen() {
           data: `tel:${number}`,
         });
 
-        return('');
+        const returning_data = {
+          contactsToShow: matchedContacts.map(c => ({
+            name: c.name,
+            number: c.phoneNumbers?.[0]?.number,
+          }))
+        };
+        return returning_data;
       }
+
+
     } catch (err) {
       console.error('❗ Error while accessing contacts or dialing:', err);
       showNotification('Failed to search or dial contact', 'error');

@@ -1,5 +1,6 @@
 // components/actions/ComponentSingleContact.jsx
 import { Feather } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -21,7 +22,7 @@ export default function ComponentSingleContact({ actionData, actionType }) {
     return (
       <View style={styles.card}>
         <View style={styles.row}>
-          <Feather name="phone" size={24} color="#000" style={styles.icon} />
+          <FontAwesome name="user-circle-o" size={24} color="black" />
           <Text style={styles.number}>No contact found</Text>
         </View>
       </View>
@@ -79,6 +80,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   number: {
+    paddingLeft: 5,
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
