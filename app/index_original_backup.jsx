@@ -1,7 +1,4 @@
-import ComponentMessageContact from '@/components/actions/ComponentMessageContact';
 import ComponentMultipleContact from '@/components/actions/ComponentMultipleContact';
-import ComponentPickContact from '@/components/actions/ComponentPickContact';
-import ComponentSendMessageCard from '@/components/actions/ComponentSendMessageCard';
 import ChatHistory from '@/components/ChatHistory';
 import EditClearButton from '@/components/EditClearButton';
 import GenerateMessageUI from '@/components/GenerateMessageUI';
@@ -10,13 +7,12 @@ import MicInterface from '@/components/MicInterface';
 import NotificationMessage from '@/components/NotificationMessage';
 import TextInputModal from '@/components/TextInputModal';
 import TopLeftToggleIcon from '@/components/TopLeftToggleIcon';
-import { useContact } from '@/components/utility/ContactContext'; // Global context provider
 import { handleUserInput } from '@/components/utility/DataManager';
 import { Tektur_900Black, useFonts } from '@expo-google-fonts/tektur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import * as IntentLauncher from 'expo-intent-launcher';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Animated, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
@@ -36,12 +32,6 @@ export default function HomeScreen() {
   // Animated values
   const homeOpacity = useRef(new Animated.Value(1)).current;
   const chatOpacity = useRef(new Animated.Value(0)).current;
-  
-  // // Flag to show selectedContact
-  // const [isWaitingForContactSelection, setIsWaitingForContactSelection] = useState(false);
-
-  // Inside your functional component
-  const { contactSelectedFlag, selectedContact, setContactSelectedFlag } = useContact();
 
   // Backend response state
   const [GetBackendResponse, setGetBackendResponse] = useState(null);
@@ -52,15 +42,6 @@ export default function HomeScreen() {
     message: '',
     type: 'success',
   });
-
-  // 🧠 When contact is picked, show message contact UI
-  useEffect(() => {
-    if (contactSelectedFlag && selectedContact) {
-      const messageContactUI = <ComponentMessageContact />;
-      setChatMessages(prev => [messageContactUI, ...prev]);
-      setContactSelectedFlag(false);
-    }
-  }, [contactSelectedFlag, selectedContact]);
 
   // Animation helpers
   const showChatView = () => {
@@ -220,7 +201,6 @@ export default function HomeScreen() {
                   <ComponentMultipleContact contacts={get_new_json_rasa.contactsToShow} />
                 );
                 setChatMessages(prev => [contactUI, ...prev]);
-                showChatView();
               }
 
 
@@ -252,160 +232,6 @@ export default function HomeScreen() {
                   data: `tel:${number}`,
                 });
             }
-          }
-
-          // 👉 Handle sending message
-          if(response.actionType === 'send_message' && response.actionData.custom?.fallback_action != 'action_default_fallback'){
-
-                // Handle contact and message to send
-                if (response.actionData.custom?.message_status === 'ask_message_receiver_name'){
-
-                  // UI showing of pickup contact and selected contact
-                      const pickUpContactUI = (
-                        <ComponentPickContact
-                          onContactPicked={async (contact) => {
-                            // Show the selected contact UI
-                            const contactUI = <ComponentMessageContact data={contact} />;
-                            setChatMessages((prev) => [contactUI, ...prev]);
-                            showChatView();
-
-                            // Send contact name to Rasa via handleUserInput
-                            const contact_data_for_server = 'message_receiver_name_content ' + contact.name;
-                            const rasaResponse = await handleUserInput('text', contact_data_for_server);
-
-                            // Rasa response of write message
-                            const messageUI = (
-                              <GenerateMessageUI
-                                userQuery={rasaResponse.userQuery}
-                                actionType={rasaResponse.actionType}
-                                actionData={rasaResponse.actionData}
-                              />
-                            );
-                            setChatMessages(prev => [messageUI, ...prev]);
-                            showChatView();
-
-                            // UI showing about enter data 
-                              // If Rasa now wants us to ask user to enter the message text
-                            if (rasaResponse.actionData.custom?.message_status === 'ask_message_send_text') {
-                              const messageInputUI = (
-                                <ComponentSendMessageCard
-                                  contact={contact}
-
-                                  // On send case
-                                  onSend={async (messageText) => {
-                                    const userInput = 'message_send_text_content ' + messageText;
-                                    const rasaFinalResponse = await handleUserInput('text', userInput);
-
-                                    const finalUI = (
-                                      <GenerateMessageUI
-                                        userQuery={rasaFinalResponse.userQuery}
-                                        actionType={rasaFinalResponse.actionType}
-                                        actionData={rasaFinalResponse.actionData}
-                                      />
-                                    );
-                                    setChatMessages(prev => [finalUI, ...prev]);
-                                    showChatView();
-                                  }}
-
-                                  // On cancel case
-                                  onCancel={async() => {
-                                    const userInput = 'stop';
-                                    const rasaFinalResponse = await handleUserInput('text', userInput);
-
-                                    const finalUI = (
-                                      <GenerateMessageUI
-                                        userQuery={rasaFinalResponse.userQuery}
-                                        actionType={rasaFinalResponse.actionType}
-                                        actionData={rasaFinalResponse.actionData}
-                                      />
-                                    );
-                                    setChatMessages(prev => [finalUI, ...prev]);
-                                    showChatView();
-                                  }}
-                                />
-                              );
-
-                              setChatMessages(prev => [messageInputUI, ...prev]);
-                              showChatView();
-                            }
-                            
-                          }}
-                        />
-                      );
-
-                  setChatMessages((prev) => [pickUpContactUI, ...prev]);
-                  showChatView();
-                }
-
-                // // Handle message only to send
-                // if (response.actionData.custom?.message_status === 'ask_message_send_text') {
-                //   const contactName = response.actionData.custom?.message_receiver_name;
-
-                //   // 🔍 Fetch all contacts
-                //   const { data: contacts } = await Contacts.getContactsAsync({
-                //     fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Image],
-                //   });
-
-                //   // 🔎 Find the first contact that matches the name exactly
-                //   const matchedContact = contacts.find(contact => contact.name === contactName);
-
-                //   // ⚠️ If no match found or no number, skip rendering
-                //   if (!matchedContact || !matchedContact.phoneNumbers || matchedContact.phoneNumbers.length === 0) {
-                //     console.warn("No valid contact found for", contactName);
-                //     return;
-                //   }
-
-                //   // 🧠 Get first phone number only
-                //   const contactForComponent = {
-                //     name: matchedContact.name,
-                //     number: matchedContact.phoneNumbers[0].number,
-                //     image: matchedContact.imageAvailable ? matchedContact.image : null,
-                //   };
-
-                //   // ✅ Render component with contact
-                //   const messageInputUI = (
-                //     <ComponentSendMessageCard
-                //       contact={contactForComponent}
-
-                //       // On send case
-                //       onSend={async (messageText) => {
-                //         const userInput = 'message_send_text_content ' + messageText;
-                //         const rasaFinalResponse = await handleUserInput('text', userInput);
-
-                //         const finalUI = (
-                //           <GenerateMessageUI
-                //             userQuery={rasaFinalResponse.userQuery}
-                //             actionType={rasaFinalResponse.actionType}
-                //             actionData={rasaFinalResponse.actionData}
-                //           />
-                //         );
-                //         setChatMessages(prev => [finalUI, ...prev]);
-                //         showChatView();
-                //       }}
-
-                //       // On cancel case
-                //       onCancel={async () => {
-                //         const userInput = 'stop';
-                //         const rasaFinalResponse = await handleUserInput('text', userInput);
-
-                //         const finalUI = (
-                //           <GenerateMessageUI
-                //             userQuery={rasaFinalResponse.userQuery}
-                //             actionType={rasaFinalResponse.actionType}
-                //             actionData={rasaFinalResponse.actionData}
-                //           />
-                //         );
-                //         setChatMessages(prev => [finalUI, ...prev]);
-                //         showChatView();
-                //       }}
-                //     />
-                //   );
-
-                //   setChatMessages(prev => [messageInputUI, ...prev]);
-                //   showChatView();
-                // }
-
-                
           }
 
           setGetBackendResponse(response);
@@ -591,74 +417,74 @@ export default function HomeScreen() {
   }
 
   return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-        {/* Top Navigation Bar */}
-        <View style={styles.topBar}>
-          <TopLeftToggleIcon showChatHistory={showChatHistory} toggleView={toggleView} />
-          <Text style={styles.title}>ASNA</Text>
-          <EditClearButton onPress={handleClearChat} />
-        </View>
+      {/* Top Navigation Bar */}
+      <View style={styles.topBar}>
+        <TopLeftToggleIcon showChatHistory={showChatHistory} toggleView={toggleView} />
+        <Text style={styles.title}>ASNA</Text>
+        <EditClearButton onPress={handleClearChat} />
+      </View>
 
-        {/* Middle Section with Animated Fade Transition */}
-        <>
-          <Animated.View style={[styles.animatedView, { opacity: homeOpacity, flex: 1 }]}>
-            <HomeMiddleSection />
-          </Animated.View>
+      {/* Middle Section with Animated Fade Transition */}
+      <>
+        <Animated.View style={[styles.animatedView, { opacity: homeOpacity, flex: 1 }]}>
+          <HomeMiddleSection />
+        </Animated.View>
 
-          <Animated.View
-            style={[
-              styles.animatedView,
-              {
-                opacity: chatOpacity,
-                flex: 1,
-                position: 'absolute',
-                top: 70,
-                left: 0,
-                right: 0,
-                bottom: 150,
-              },
-            ]}
-            pointerEvents={showChatHistory ? 'auto' : 'none'}
-          >
-            <ChatHistory messages={chatMessages} />
-          </Animated.View>
-        </>
+        <Animated.View
+          style={[
+            styles.animatedView,
+            {
+              opacity: chatOpacity,
+              flex: 1,
+              position: 'absolute',
+              top: 70,
+              left: 0,
+              right: 0,
+              bottom: 150,
+            },
+          ]}
+          pointerEvents={showChatHistory ? 'auto' : 'none'}
+        >
+          <ChatHistory messages={chatMessages} />
+        </Animated.View>
+      </>
 
-        {/* Bottom Input Bar */}
-        <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.micButton} onPress={() => setShowMicModal(true)}>
-            <Ionicons name="mic" size={28} color="#fff" />
-          </TouchableOpacity>
+      {/* Bottom Input Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.micButton} onPress={() => setShowMicModal(true)}>
+          <Ionicons name="mic" size={28} color="#fff" />
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.keyboardIcon} onPress={() => setShowTextInputModal(true)}>
-            <MaterialCommunityIcons name="keyboard" size={30} color="#000" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.keyboardIcon} onPress={() => setShowTextInputModal(true)}>
+          <MaterialCommunityIcons name="keyboard" size={30} color="#000" />
+        </TouchableOpacity>
+      </View>
 
-        {/* Mic Interface */}
-        <MicInterface
-          visible={showMicModal}
-          onClose={() => setShowMicModal(false)}
-          onFinish={handleRecordingComplete}
-        />
+      {/* Mic Interface */}
+      <MicInterface
+        visible={showMicModal}
+        onClose={() => setShowMicModal(false)}
+        onFinish={handleRecordingComplete}
+      />
 
-        {/* TextInput Interface */}
-        <TextInputModal
-          visible={showTextInputModal}
-          onClose={() => setShowTextInputModal(false)}
-          onSubmit={handleTextSubmit}
-        />
+      {/* TextInput Interface */}
+      <TextInputModal
+        visible={showTextInputModal}
+        onClose={() => setShowTextInputModal(false)}
+        onSubmit={handleTextSubmit}
+      />
 
-        {/* Notification Message */}
-        <NotificationMessage
-          visible={notification.visible}
-          message={notification.message}
-          type={notification.type}
-          onHide={() => setNotification({ visible: false, message: '', type: '' })}
-        />
-      </SafeAreaView>
+      {/* Notification Message */}
+      <NotificationMessage
+        visible={notification.visible}
+        message={notification.message}
+        type={notification.type}
+        onHide={() => setNotification({ visible: false, message: '', type: '' })}
+      />
+    </SafeAreaView>
   );
 }
 

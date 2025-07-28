@@ -1,6 +1,6 @@
+import { ContactProvider } from '@/components/utility/ContactContext'; // ✅ import
 import { Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
-// import Logo from '../assets/favicon.png'
 
 // const RootLayout = () => {
 //   return (
@@ -20,11 +20,13 @@ import { StyleSheet } from 'react-native';
 
 const RootLayout = () => {
   return (
-    <Stack>
-      {/* Optional: Customize specific screens */}
-      <Stack.Screen name="index" options={{ title: '', headerShown: false }} />
-      {/* <Stack.Screen name="about/index" options={{ title: 'About' }} /> */}
-    </Stack>
+    <ContactProvider>
+      <Stack>
+        {/* Optional: Customize specific screens */}
+        <Stack.Screen name="index" options={{ title: '', headerShown: false }} />
+        {/* <Stack.Screen name="about/index" options={{ title: 'About' }} /> */}
+      </Stack>
+    </ContactProvider>
   );
 };
 
